@@ -8,8 +8,6 @@ import base64
 import threading, time
 
 def run():
-    !streamlit run app.py
-
 threading.Thread(target=run).start()
 time.sleep(5)
 public_url = ngrok.connect(8501)
