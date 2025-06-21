@@ -1,6 +1,5 @@
 # i_am_shakti/app.py
 !pip install streamlit pyngrok pandas SpeechRecognition
-!ngrok config add-authtoken 2xi9wdtOnIR3VeKZBtC0Alzk47q_qstUgLG6f3b1PPLGvnW8
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -8,7 +7,6 @@ import os
 import speech_recognition as sr
 import base64
 import threading, time
-from pyngrok import ngrok
 
 def run():
     !streamlit run app.py
