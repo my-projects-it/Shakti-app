@@ -1,21 +1,13 @@
-# i_am_shakti/app.py
 import streamlit as st
 import pandas as pd
 from datetime import datetime
 import os
 import speech_recognition as sr
-import base64
-import threading, time
 
-def run():
-threading.Thread(target=run).start()
-time.sleep(5)
-public_url = ngrok.connect(8501)
-print("🔗 Public URL:", public_url)
-
-# ==== FUNCTIONS ====
+# CSV file to save stories
 CSV_FILE = "anonymous_stories.csv"
 
+# Function to save story to CSV
 def save_story(text):
     entry = {
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -28,14 +20,14 @@ def save_story(text):
         df = pd.DataFrame([entry])
     df.to_csv(CSV_FILE, index=False)
 
+# Function to transcribe audio
 def transcribe_audio(audio_file):
     recognizer = sr.Recognizer()
     with sr.AudioFile(audio_file) as source:
         audio_data = recognizer.record(source)
         return recognizer.recognize_google(audio_data, language="hi-IN")
 
-# ==== UI ====
-
+# ==== Streamlit UI ====
 st.set_page_config(page_title="I Am Shakti", layout="centered")
 
 st.markdown("""
@@ -47,7 +39,7 @@ st.markdown("""
 
 st.markdown("---")
 
-# Voice input
+# Audio input
 st.subheader("🎤 बोलकर लिखें (Speak in Hindi)")
 uploaded_audio = st.file_uploader("Upload your Hindi voice message (WAV only)", type=["wav"])
 
@@ -61,7 +53,7 @@ if uploaded_audio:
 
 st.markdown("---")
 
-# Manual story entry
+# Text story input
 st.subheader("✍️ अपनी कहानी खुद लिखें")
 story = st.text_area("यहाँ लिखें (Write your story here)", height=300)
 if st.button("📤 Submit / सबमिट करें"):
@@ -74,3 +66,4 @@ if st.button("📤 Submit / सबमिट करें"):
 st.markdown("---")
 st.caption("🔐 आपकी कहानी सिर्फ आपकी है — नाम, पता या कोई जानकारी संग्रह नहीं की जाती।")
 st.caption("🌸 आप अकेली नहीं हैं — हम सब आपकी आवाज़ हैं।")
+
