@@ -1,5 +1,4 @@
 # i_am_shakti/app.py
-!pip install streamlit pyngrok pandas SpeechRecognition
 import streamlit as st
 import pandas as pd
 from datetime import datetime
