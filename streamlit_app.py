@@ -7,7 +7,12 @@ from pydub import AudioSegment
 import tempfile
 
 # ========== Streamlit Page Config ==========
-st.set_page_config(page_title="I Am Shakti", page_icon="🔱", layout="centered")
+st.set_page_config(
+    page_title="Meri Kahaani Zinda Hai",
+    page_icon="🕊️",
+    layout="centered"
+)
+
 
 # ========== CSV Storage ==========
 CSV_FILE = "anonymous_stories.csv"
