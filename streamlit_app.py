@@ -137,5 +137,6 @@ if st.button("📤 " + T['submit']):
         st.warning("⚠️ " + T['error'])
 
 st.markdown("---")
-st.caption("📜 हर शब्द मेरा है, हर लाइन मेरा सच — मेरी कहानी ज़िंदा है।")
+st.caption("📜 Every word is mine. Every line is my truth. My story is still alive.")
+
 
