@@ -6,7 +6,7 @@ import speech_recognition as sr
 from pydub import AudioSegment
 import tempfile
 
-st.set_page_config(page_title="I Am Shakti", page_icon="🇮🇳", layout="centered")
+st.set_page_config(page_title="I Am Shakti", layout="centered")
 
 CSV_FILE = "anonymous_stories.csv"
 
