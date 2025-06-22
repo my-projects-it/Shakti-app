@@ -1,4 +1,5 @@
-!pip install pydub
+pip install pydub
+pip install ffmpeg-python
 import streamlit as st
 import pandas as pd
 from datetime import datetime
