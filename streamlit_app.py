@@ -13,7 +13,6 @@ st.set_page_config(
     layout="centered"
 )
 
-
 # ========== CSV Storage ==========
 CSV_FILE = "anonymous_stories.csv"
 
@@ -29,7 +28,7 @@ def save_story(text):
         df = pd.DataFrame([entry])
     df.to_csv(CSV_FILE, index=False)
 
-# ========== Convert audio to WAV ==========
+# ========== Convert any audio to WAV ==========
 def convert_to_wav(uploaded_file):
     audio_format = uploaded_file.type.split("/")[-1]
     temp_input = tempfile.NamedTemporaryFile(delete=False, suffix="." + audio_format)
@@ -94,16 +93,15 @@ translations = {
     }
 }
 
-T = translations[language]  # current language object
+T = translations[language]  # selected language text
 
 # ========== Header ==========
 st.markdown(f"""
     <div style='text-align: center; padding: 10px;'>
-        <h1 style='color:#6b0f1a;'>🌸 {T['title']}</h1>
+        <h1 style='color:#6b0f1a;'>🕊️ {T['title']}</h1>
         <h4 style='color:#333;'>{T['subtitle']}</h4>
     </div>
 """, unsafe_allow_html=True)
-
 st.markdown("---")
 
 # ========== Audio Upload ==========
@@ -118,19 +116,19 @@ if uploaded_audio:
         wav_path = convert_to_wav(uploaded_audio)
         text = transcribe_audio(wav_path)
         st.success("✅ Transcription successful!")
-        story = st.text_area(T["transcribed"], text, height=200)
+        story = st.text_area(T["transcribed"], value=text, height=200)
     except Exception as e:
         st.error(f"⚠️ Error: {e}")
         story = ""
 
 # ========== Text Input ==========
 st.subheader("✍️ " + T['write_story'])
-story_text = st.text_area(label="", height=300)
+story_text = st.text_area(label="", value="", height=300)
 
 if not story and story_text:
     story = story_text
 
-# ========== Submit ==========
+# ========== Submit Button ==========
 if st.button("📤 " + T['submit']):
     if story.strip():
         save_story(story)
