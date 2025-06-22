@@ -1,13 +1,17 @@
+!pip install pydub
 import streamlit as st
 import pandas as pd
 from datetime import datetime
 import os
 import speech_recognition as sr
+from pydub import AudioSegment
+import tempfile
 
-# CSV file to save stories
+st.set_page_config(page_title="I Am Shakti", page_icon="🇮🇳", layout="centered")
+
 CSV_FILE = "anonymous_stories.csv"
 
-# Function to save story to CSV
+# Save to CSV
 def save_story(text):
     entry = {
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -20,50 +24,76 @@ def save_story(text):
         df = pd.DataFrame([entry])
     df.to_csv(CSV_FILE, index=False)
 
-# Function to transcribe audio
-def transcribe_audio(audio_file):
+# Convert all audio to WAV for recognition
+def convert_to_wav(uploaded_file):
+    audio_format = uploaded_file.type.split("/")[-1]
+    temp_input = tempfile.NamedTemporaryFile(delete=False, suffix="." + audio_format)
+    temp_input.write(uploaded_file.read())
+    temp_input.flush()
+
+    audio = AudioSegment.from_file(temp_input.name)
+    temp_wav = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+    audio.export(temp_wav.name, format="wav")
+    return temp_wav.name
+
+# Transcribe Hindi audio
+def transcribe_audio(audio_path):
     recognizer = sr.Recognizer()
-    with sr.AudioFile(audio_file) as source:
+    with sr.AudioFile(audio_path) as source:
         audio_data = recognizer.record(source)
         return recognizer.recognize_google(audio_data, language="hi-IN")
 
-# ==== Streamlit UI ====
-st.set_page_config(page_title="I Am Shakti", layout="centered")
-
+# ================== HEADER ==================
 st.markdown("""
-    <div style='text-align: center;'>
-        <h1 style='color:#b30059;'>🩷 I Am Shakti</h1>
-        <h4>Tell Your Story Without Fear | अपनी पहचान गुप्त रखें</h4>
+    <div style='text-align: center; padding: 10px;'>
+        <h1 style='color:#6b0f1a;'>🇮🇳 I Am Shakti</h1>
+        <h4 style='color:#333;'>🚨 एक सुरक्षित प्लेटफ़ॉर्म – पहचान गुप्त, आवाज़ सम्मानित</h4>
+        <p style='color:#555;'>🎙️ अपनी आवाज़ से या ✍️ लिखकर कहानी भेजें। कोई व्यक्तिगत जानकारी नहीं माँगी जाती।</p>
     </div>
 """, unsafe_allow_html=True)
 
 st.markdown("---")
 
-# Audio input
-st.subheader("🎤 बोलकर लिखें (Speak in Hindi)")
-uploaded_audio = st.file_uploader("Upload your Hindi voice message (WAV only)", type=["wav"])
+# ========== AUDIO INPUT ==========
+st.subheader("🎙️ अपनी आवाज़ में कहें")
+
+uploaded_audio = st.file_uploader(
+    label="📂 अपनी आवाज़ अपलोड करें (MP3, WAV, M4A, OGG आदि)", 
+    type=["mp3", "wav", "m4a", "ogg"]
+)
+
+story = ""
 
 if uploaded_audio:
-    st.info("Transcribing your audio...")
+    st.info("⏳ आपकी आवाज़ को प्रोसेस किया जा रहा है...")
     try:
-        text = transcribe_audio(uploaded_audio)
-        st.text_area("Transcribed Text", text, height=150)
+        wav_path = convert_to_wav(uploaded_audio)
+        text = transcribe_audio(wav_path)
+        st.success("✅ आवाज़ सफलतापूर्वक टेक्स्ट में बदली गई।")
+        story = st.text_area("🧾 ट्रांसक्राइब की गई कहानी (ज़रूरत हो तो एडिट करें)", text, height=200)
     except Exception as e:
-        st.error(f"Error: {e}")
+        st.error("❌ क्षमा करें, आपकी आवाज़ को समझा नहीं जा सका।")
+        story = ""
 
-st.markdown("---")
+# ========== TEXT INPUT ==========
+st.subheader("✍️ खुद लिखें")
 
-# Text story input
-st.subheader("✍️ अपनी कहानी खुद लिखें")
-story = st.text_area("यहाँ लिखें (Write your story here)", height=300)
-if st.button("📤 Submit / सबमिट करें"):
+story_text = st.text_area("🧾 या यहाँ सीधे लिखें", height=300)
+if not story and story_text:
+    story = story_text
+
+# ========== SUBMIT ==========
+if st.button("📩 सबमिट करें / Submit"):
     if story.strip():
         save_story(story)
-        st.success("✅ आपकी कहानी सुरक्षित रूप से सेव हो गई है। धन्यवाद!")
+        st.success("🎉 आपकी कहानी सुरक्षित रूप से सेव हो गई है। धन्यवाद!")
     else:
-        st.error("⚠️ कृपया खाली कहानी सबमिट न करें।")
+        st.warning("⚠️ कृपया खाली कहानी सबमिट न करें।")
 
+# ========== FOOTER ==========
 st.markdown("---")
-st.caption("🔐 आपकी कहानी सिर्फ आपकी है — नाम, पता या कोई जानकारी संग्रह नहीं की जाती।")
-st.caption("🌸 आप अकेली नहीं हैं — हम सब आपकी आवाज़ हैं।")
+st.caption("🔐 यह प्लेटफ़ॉर्म पूरी तरह से गुप्त और सुरक्षित है।")
+st.caption("💬 आपकी कहानी किसी के साथ साझा नहीं की जाएगी।")
+st.caption("🌺 आप अकेली नहीं हैं – भारत आपके साथ है।")
+
 
