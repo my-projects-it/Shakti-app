@@ -1,3 +1,5 @@
 streamlit
 pandas
-SpeechRecognition
+speechrecognition
+pydub
+ffmpeg-python
