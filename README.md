@@ -34,7 +34,7 @@ https://shakti-app-dqav.onrender.com
 ## 📁 Project Structure
 
 ```text
-meri-kahani-zinda-hai/
+shakti/
 ├── streamlit_app.py       # Core Streamlit application  
 ├── requirements.txt       # Python package dependencies  
 ├── render.yaml            # Render.com deployment configuration  
