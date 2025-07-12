@@ -8,7 +8,7 @@ import tempfile
 
 # ========== Page Config ==========
 st.set_page_config(
-    page_title="Meri Kahaani Zinda Hai",
+    page_title="Shakti",
     page_icon="📖",
     layout="centered"
 )
@@ -52,7 +52,7 @@ language = st.selectbox("🌐 Choose Language / भाषा चुनें", [
 
 translations = {
     "English": {
-        "title": "Meri Kahaani Zinda Hai",
+        "title": "Shakti",
         "subtitle": "Your story is still alive",
         "upload_audio": "Upload your voice (MP3, WAV, M4A)",
         "write_story": "Write your story",
@@ -62,7 +62,7 @@ translations = {
         "transcribed": "Transcribed Text (editable):"
     },
     "Hindi": {
-        "title": "मेरी कहानी ज़िंदा है",
+        "title": "Shakti",
         "subtitle": "हर आवाज़ अब साँस ले रही है",
         "upload_audio": "अपनी आवाज़ अपलोड करें (MP3, WAV, M4A)",
         "write_story": "अपनी कहानी लिखें",
