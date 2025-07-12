@@ -1,8 +1,8 @@
-# 📖 Meri Kahaani Zinda Hai
+# Shakti app
 
 ### _Every voice has a story. Every story deserves to live._
 
-**Meri Kahaani Zinda Hai** is a safe, anonymous, and multilingual platform empowering survivors and everyday heroes to share their truths — through voice or text — in their own words and languages.
+**Shakti** is a safe, anonymous, and multilingual platform empowering survivors and everyday heroes to share their truths — through voice or text — in their own words and languages.
 
 ---
 
@@ -26,7 +26,7 @@ No names. No judgment. Just stories that breathe life.
 
 ## 🚀 Experience It Live
 
-Explore the live version of **Meri Kahaani Zinda Hai** here:  
+Explore the live version of **Shakti** here:  
 https://shakti-app-dqav.onrender.com
 
 ---
