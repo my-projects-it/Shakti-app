@@ -5,6 +5,13 @@ from datetime import datetime
 import speech_recognition as sr
 from pydub import AudioSegment
 import tempfile
+import uuid
+
+if "stories" not in st.session_state:
+    st.session_state.stories = []
+
+if "comments" not in st.session_state:
+    st.session_state.comments = {}
 
 # ========== Page Config ==========
 st.set_page_config(
@@ -128,15 +135,49 @@ story_text = st.text_area(label="", value="", height=300)
 if not story and story_text:
     story = story_text
 
-# ========== Submit Button ==========
+
 if st.button("📤 " + T['submit']):
     if story.strip():
         save_story(story)
+
+        story_id = str(uuid.uuid4())
+        st.session_state.stories.append({"id": story_id, "text": story.strip()})
+        st.session_state.comments[story_id] = []
+
         st.success("✅ " + T['success'])
     else:
-        st.warning("⚠️ " + T['error'])
-
+        st.warning("⚠️ " + T['error']) 
 st.markdown("---")
-st.caption("📜 Every word is mine. Every line is my truth. My story is still alive.")
+st.header("📚 Community Stories")
 
+if not st.session_state.stories:
+    st.info("No stories yet. Submit one above to start the conversation.")
+else:
+    for story_obj in reversed(st.session_state.stories):
+        st.markdown(f"### 🗣️ {story_obj['text']}")
 
+        # — Use a form so the "Post Comment" button only submits THIS story’s comment
+        with st.form(key=f"comment_form_{story_obj['id']}"):
+            comment_input = st.text_input(
+                "💬 Add a comment to this story:",
+                key=f"input_{story_obj['id']}"
+            )
+            post = st.form_submit_button("Post Comment")
+
+            if post:
+                if comment_input.strip():
+                    st.session_state.comments.setdefault(story_obj['id'], []).append(
+                        comment_input.strip()
+                    )
+                    st.success("💬 Comment posted!")
+                else:
+                    st.warning("⚠️ Comment cannot be empty.")
+
+        # — Display existing comments
+        comments = st.session_state.comments.get(story_obj['id'], [])
+        if comments:
+            st.markdown("**🧵 Comments:**")
+            for idx, c in enumerate(comments, 1):
+                st.markdown(f"- {c}")
+
+        st.markdown("---")
