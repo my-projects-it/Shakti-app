@@ -23,10 +23,11 @@ st.set_page_config(
 # ========== CSV File Setup ==========
 CSV_FILE = "anonymous_stories.csv"
 
-def save_story(text):
+def save_story(text, tags):
     entry = {
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "story": text.strip()
+        "story": text.strip(),
+        "tags": ",".join(tags)  # Save tags as comma-separated string
     }
     if os.path.exists(CSV_FILE):
         df = pd.read_csv(CSV_FILE)
@@ -34,6 +35,27 @@ def save_story(text):
     else:
         df = pd.DataFrame([entry])
     df.to_csv(CSV_FILE, index=False)
+
+def load_stories_from_csv():
+    if os.path.exists(CSV_FILE):
+        df = pd.read_csv(CSV_FILE)
+        # Convert DataFrame rows into list of story dicts with tags as list
+        stories = []
+        for _, row in df.iterrows():
+            tags = []
+            if "tags" in row and pd.notna(row["tags"]):
+                tags = [tag.strip() for tag in row["tags"].split(",") if tag.strip()]
+            stories.append({
+                "id": str(uuid.uuid4()),  # unique id for session usage
+                "text": row["story"],
+                "tags": tags
+            })
+        return stories
+    return []
+
+# Load stories from CSV into session state on app start
+if not st.session_state.stories:
+    st.session_state.stories = load_stories_from_csv()
 
 # ========== Audio Conversion ==========
 def convert_to_wav(uploaded_file):
@@ -66,7 +88,14 @@ translations = {
         "submit": "Submit",
         "success": "Your story has been saved. Thank you!",
         "error": "Please do not submit an empty story.",
-        "transcribed": "Transcribed Text (editable):"
+        "transcribed": "Transcribed Text (editable):",
+        "add_tags": "Add tags (e.g., #domesticviolence, #healingjourney)",
+        "enter_tags": "Enter tags separated by commas:",
+        "comment_placeholder": "Add a comment to this story:",
+        "post_comment": "Post Comment",
+        "comment_empty": "Comment cannot be empty.",
+        "comment_posted": "Comment posted!",
+        "no_stories": "No stories yet. Submit one above to start the conversation."
     },
     "Hindi": {
         "title": "Shakti",
@@ -76,7 +105,14 @@ translations = {
         "submit": "सबमिट करें",
         "success": "आपकी कहानी सेव हो गई है। धन्यवाद!",
         "error": "कृपया खाली कहानी सबमिट न करें।",
-        "transcribed": "बदला गया टेक्स्ट (संपादन करें):"
+        "transcribed": "बदला गया टेक्स्ट (संपादन करें):",
+        "add_tags": "टैग जोड़ें (जैसे, #domesticviolence, #healingjourney)",
+        "enter_tags": "कॉमा से टैग दर्ज करें:",
+        "comment_placeholder": "इस कहानी पर टिप्पणी जोड़ें:",
+        "post_comment": "टिप्पणी भेजें",
+        "comment_empty": "टिप्पणी खाली नहीं हो सकती।",
+        "comment_posted": "टिप्पणी भेजी गई!",
+        "no_stories": "कोई कहानी नहीं है। ऊपर एक सबमिट करें।"
     },
     "Tamil": {
         "title": "என் கதை உயிருடன் உள்ளது",
@@ -86,7 +122,14 @@ translations = {
         "submit": "சமர்ப்பிக்கவும்",
         "success": "உங்கள் கதை சேமிக்கப்பட்டது. நன்றி!",
         "error": "காலியான கதையை சமர்ப்பிக்க வேண்டாம்.",
-        "transcribed": "மாற்றிய உரை (திருத்தக்கூடியது):"
+        "transcribed": "மாற்றிய உரை (திருத்தக்கூடியது):",
+        "add_tags": "டேக்கள் சேர்க்கவும் (எ.கா., #domesticviolence, #healingjourney)",
+        "enter_tags": "டேக்களை கமாஸ் கொண்டு பிரித்து உள்ளிடவும்:",
+        "comment_placeholder": "இந்த கதைக்கு கருத்து சேர்:",
+        "post_comment": "கருத்து பதிவிடு",
+        "comment_empty": "கருத்து காலியானதாக இருக்க முடியாது.",
+        "comment_posted": "கருத்து பதிவிடப்பட்டது!",
+        "no_stories": "கதைகள் இல்லை. மேலே ஒரு கதையை சமர்ப்பிக்கவும்."
     },
     "Bengali": {
         "title": "আমার গল্প এখনও বেঁচে আছে",
@@ -96,7 +139,14 @@ translations = {
         "submit": "জমা দিন",
         "success": "আপনার গল্প সংরক্ষিত হয়েছে। ধন্যবাদ!",
         "error": "অনুগ্রহ করে খালি গল্প জমা দেবেন না।",
-        "transcribed": "লিপ্যন্তরিত পাঠ্য (সম্পাদনাযোগ্য):"
+        "transcribed": "লিপ্যন্তরিত পাঠ্য (সম্পাদনাযোগ্য):",
+        "add_tags": "ট্যাগ যোগ করুন (যেমন, #domesticviolence, #healingjourney)",
+        "enter_tags": "কমা দিয়ে ট্যাগ লিখুন:",
+        "comment_placeholder": "এই গল্পে মন্তব্য যোগ করুন:",
+        "post_comment": "মন্তব্য পোস্ট করুন",
+        "comment_empty": "মন্তব্য খালি হতে পারে না।",
+        "comment_posted": "মন্তব্য পোস্ট হয়েছে!",
+        "no_stories": "কোনো গল্প নেই। উপরে একটি জমা দিন।"
     }
 }
 
@@ -135,45 +185,55 @@ story_text = st.text_area(label="", value="", height=300)
 if not story and story_text:
     story = story_text
 
+# ========== Tags Input ==========
+st.subheader("🏷️ " + T["add_tags"])
+tags_input = st.text_input(T["enter_tags"], value="")
+tags = [tag.strip().lower() for tag in tags_input.split(",") if tag.strip()]
 
+# ========== Submit Button ==========
 if st.button("📤 " + T['submit']):
     if story.strip():
-        save_story(story)
+        save_story(story, tags)
 
         story_id = str(uuid.uuid4())
-        st.session_state.stories.append({"id": story_id, "text": story.strip()})
+        st.session_state.stories.append({"id": story_id, "text": story.strip(), "tags": tags})
         st.session_state.comments[story_id] = []
 
         st.success("✅ " + T['success'])
     else:
-        st.warning("⚠️ " + T['error']) 
+        st.warning("⚠️ " + T['error'])
 st.markdown("---")
+
+# ========== Community Stories ==========
 st.header("📚 Community Stories")
 
 if not st.session_state.stories:
-    st.info("No stories yet. Submit one above to start the conversation.")
+    st.info(T["no_stories"])
 else:
     for story_obj in reversed(st.session_state.stories):
         st.markdown(f"### 🗣️ {story_obj['text']}")
+        if story_obj.get("tags"):
+            tags_display = " ".join([f"`#{tag}`" for tag in story_obj["tags"]])
+            st.markdown(f"**Tags:** {tags_display}")
 
-        # — Use a form so the "Post Comment" button only submits THIS story’s comment
+        # Comment form for each story
         with st.form(key=f"comment_form_{story_obj['id']}"):
             comment_input = st.text_input(
-                "💬 Add a comment to this story:",
+                "💬 " + T["comment_placeholder"],
                 key=f"input_{story_obj['id']}"
             )
-            post = st.form_submit_button("Post Comment")
+            post = st.form_submit_button(T["post_comment"])
 
             if post:
                 if comment_input.strip():
                     st.session_state.comments.setdefault(story_obj['id'], []).append(
                         comment_input.strip()
                     )
-                    st.success("💬 Comment posted!")
+                    st.success("💬 " + T["comment_posted"])
                 else:
-                    st.warning("⚠️ Comment cannot be empty.")
+                    st.warning("⚠️ " + T["comment_empty"])
 
-        # — Display existing comments
+        # Display existing comments
         comments = st.session_state.comments.get(story_obj['id'], [])
         if comments:
             st.markdown("**🧵 Comments:**")
