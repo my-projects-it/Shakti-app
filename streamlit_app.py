@@ -182,6 +182,10 @@ if uploaded_audio:
 st.subheader("✍️ " + T['write_story'])
 story_text = st.text_area(label="", value="", height=300)
 
+# Live character count
+char_count = len(story_text)
+st.caption(f"Characters: {char_count}")
+
 if not story and story_text:
     story = story_text
 
