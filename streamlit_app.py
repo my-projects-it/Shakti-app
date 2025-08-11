@@ -13,6 +13,50 @@ if "stories" not in st.session_state:
 if "comments" not in st.session_state:
     st.session_state.comments = {}
 
+# ========== Theme Toggle ==========
+if "theme" not in st.session_state:
+    st.session_state.theme = "dark"  # Default to dark mode
+
+def set_theme(theme):
+    if theme == "dark":
+        st.markdown("""
+        <style>
+            .stApp {
+                background-color: #0E1117;
+                color: white;
+            }
+            .css-1d391kg, .css-1y4p8pa, .css-1lcbm17, .css-1outpf7 {
+                background-color: #0E1117 !important;
+            }
+            .stTextArea>div>div>textarea, .stTextInput>div>div>input {
+                background-color: #262730;
+                color: white;
+            }
+            h1, h2, h3, h4, h5, h6, p, div, span {
+                color: white !important;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+    else:  # black mode
+        st.markdown("""
+        <style>
+            .stApp {
+                background-color: #000000;
+                color: white;
+            }
+            .css-1d391kg, .css-1y4p8pa, .css-1lcbm17, .css-1outpf7 {
+                background-color: #000000 !important;
+            }
+            .stTextArea>div>div>textarea, .stTextInput>div>div>input {
+                background-color: #1A1A1A;
+                color: white;
+            }
+            h1, h2, h3, h4, h5, h6, p, div, span {
+                color: white !important;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
 # ========== Page Config ==========
 st.set_page_config(
     page_title="Shakti",
@@ -20,6 +64,19 @@ st.set_page_config(
     layout="centered"
 )
 
+# ========== Theme Selector ==========
+theme_col1, theme_col2 = st.columns([3, 1])
+with theme_col2:
+    theme = st.selectbox(
+        "Theme",
+        ["Dark", "Black"],
+        index=["Dark", "Black"].index(st.session_state.theme.capitalize()),
+        key="theme_select"
+    )
+    st.session_state.theme = theme.lower()
+    set_theme(st.session_state.theme)
+
+# [REST OF THE ORIGINAL CODE REMAINS EXACTLY THE SAME...]
 # ========== CSV File Setup ==========
 CSV_FILE = "anonymous_stories.csv"
 
@@ -155,8 +212,8 @@ T = translations[language]
 # ========== Header ==========
 st.markdown(f"""
     <div style='text-align: center; padding: 10px;'>
-        <h1 style='color:#4a2c2a;'>📖 {T['title']}</h1>
-        <h4 style='color:#555;'>{T['subtitle']}</h4>
+        <h1 style='color:white;'>📖 {T['title']}</h1>
+        <h4 style='color:#DDD;'>{T['subtitle']}</h4>
     </div>
 """, unsafe_allow_html=True)
 st.markdown("---")
