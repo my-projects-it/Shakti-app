@@ -1081,7 +1081,10 @@ def get_translations():
             "search_placeholder": "Search stories...",
             "reading_time": "min read",
             "like_story": "❤️ Support",
-            "liked_story": "💖 Supported"
+            "liked_story": "💖 Supported",
+            "footer_title": "Shakti - Empowering voices, building community",
+            "footer_community": "Every story shared makes our community stronger",
+            "footer_dedication": "Made with ❤️ for survivors and supporters"
         },
         "Hindi": {
             "title": "शक्ति",
@@ -1109,7 +1112,10 @@ def get_translations():
             "search_placeholder": "कहानियाँ खोजें...",
             "reading_time": "मिनट पढ़ना",
             "like_story": "❤️ समर्थन",
-            "liked_story": "💖 समर्थित"
+            "liked_story": "💖 समर्थित",
+            "footer_title": "शक्ति - आवाज़ों को सशक्त बनाना, समुदाय का निर्माण",
+            "footer_community": "साझा की गई हर कहानी हमारे समुदाय को मजबूत बनाती है",
+            "footer_dedication": "जीवित बचे लोगों और समर्थकों के लिए ❤️ के साथ बनाया गया"
         },
         "Tamil": {
             "title": "சக்தி",
@@ -1165,7 +1171,10 @@ def get_translations():
             "search_placeholder": "গল্প খুঁজুন...",
             "reading_time": "মিনিট পড়া",
             "like_story": "❤️ সমর্থন",
-            "liked_story": "💖 সমর্থিত"
+            "liked_story": "💖 সমর্থিত",
+            "footer_title": "শক্তি - কণ্ঠস্বরকে ক্ষমতায়ন, সম্প্রদায় গড়ে তোলা",
+            "footer_community": "ভাগাভাগি করা প্রতিটি গল্প আমাদের সম্প্রদায়কে আরও শক্তিশালী করে তোলে",
+            "footer_dedication": "জীবিত ও সমর্থকদের জন্য ❤️ দিয়ে তৈরি"
         }
     }
 
@@ -1515,13 +1524,13 @@ def main():
                 st.markdown('</div>', unsafe_allow_html=True)
                 st.markdown("<br>", unsafe_allow_html=True)
     
-    # Enhanced Footer
+    # Enhanced Footer with proper translations
     st.markdown("---")
     st.markdown(f"""
     <div style="text-align: center; padding: 2rem; opacity: 0.7;">
-        <p>🌸 <strong>Shakti</strong> - Empowering voices, building community</p>
-        <p>Every story shared makes our community stronger 💪</p>
-        <p>Made with ❤️ for survivors and supporters</p>
+        <p>🌸 <strong>{T['footer_title']}</strong></p>
+        <p>{T['footer_community']} 💪</p>
+        <p>{T['footer_dedication']}</p>
     </div>
     """, unsafe_allow_html=True)
 
