@@ -726,89 +726,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ========== Force Sidebar to Stay Open ==========
-def force_sidebar_open():
-    """Force sidebar to stay open using CSS only"""
-    st.markdown("""
-    <style>
-    /* Force sidebar to be visible and prevent collapse */
-    .stSidebar {
-        display: block !important;
-        visibility: visible !important;
-        position: fixed !important;
-        left: 0 !important;
-        top: 0 !important;
-        height: 100vh !important;
-        z-index: 999999 !important;
-        transform: translateX(0px) !important;
-    }
-    
-    /* Hide ALL possible collapse buttons */
-    .stSidebar button[data-testid="baseButton-header"],
-    .stSidebar button[kind="header"],
-    .stSidebar .stButton button[kind="header"],
-    .stSidebar [data-testid="collapsedControl"],
-    .stSidebar .css-1544g2n,
-    .stSidebar .css-17eq0hr,
-    button[title="Close sidebar"] {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-    }
-    
-    /* Ensure sidebar container takes proper width */
-    .stSidebar > div {
-        width: 21rem !important;
-        min-width: 21rem !important;
-        max-width: 21rem !important;
-    }
-    
-    /* Force the sidebar content to be visible */
-    .stSidebar .css-1d391kg,
-    .stSidebar .css-1cypcdb,
-    .stSidebar .sidebar-content {
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-    }
-    
-    /* Adjust main content area to account for fixed sidebar */
-    .stMainBlockContainer,
-    .stMainBlock {
-        margin-left: 21rem !important;
-        padding-left: 1rem !important;
-    }
-    
-    /* Prevent any transform or transition that might hide sidebar */
-    .stSidebar * {
-        transition: none !important;
-        transform: none !important;
-    }
-    
-    /* For mobile responsiveness */
-    @media (max-width: 768px) {
-        .stSidebar {
-            position: relative !important;
-            width: 100% !important;
-            height: auto !important;
-        }
-        
-        .stSidebar > div {
-            width: 100% !important;
-            min-width: 100% !important;
-            max-width: 100% !important;
-        }
-        
-        .stMainBlockContainer,
-        .stMainBlock {
-            margin-left: 0 !important;
-            padding-left: 1rem !important;
-        }
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
 # ========== Enhanced CSS Styling (Pure CSS Only) ==========
 def load_custom_css():
     """Load enhanced custom CSS for better UI - Pure CSS only"""
@@ -859,64 +776,6 @@ def load_custom_css():
     #MainMenu {{visibility: hidden;}}
     footer {{visibility: hidden;}}
     header {{visibility: hidden;}}
-    
-    /* Force sidebar to stay visible - Enhanced */
-    .stSidebar {
-        display: block !important;
-        visibility: visible !important;
-        position: fixed !important;
-        left: 0 !important;
-        top: 0 !important;
-        height: 100vh !important;
-        z-index: 999999 !important;
-        background: {current_theme["card_bg"]} !important;
-        backdrop-filter: blur(10px) !important;
-        border-right: 1px solid rgba(255,255,255,0.2) !important;
-        transform: translateX(0px) !important;
-    }
-    
-    /* Hide ALL possible collapse buttons and controls */
-    .stSidebar button[data-testid="baseButton-header"],
-    .stSidebar button[kind="header"],
-    .stSidebar .stButton button[kind="header"],
-    .stSidebar [data-testid="collapsedControl"],
-    .stSidebar .css-1544g2n,
-    .stSidebar .css-17eq0hr,
-    button[title="Close sidebar"],
-    .stSidebar .css-1lcbmhc,
-    .stSidebar .css-1outpf7 {{
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-    }}
-    
-    /* Ensure sidebar container and content are visible */
-    .stSidebar > div,
-    .stSidebar .css-1d391kg,
-    .stSidebar .css-1cypcdb,
-    .stSidebar .sidebar-content {{
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        width: 21rem !important;
-        min-width: 21rem !important;
-        max-width: 21rem !important;
-    }}
-    
-    /* Adjust main content area for fixed sidebar */
-    .stMainBlockContainer,
-    .stMainBlock {{
-        margin-left: 21rem !important;
-        padding-left: 1rem !important;
-    }}
-    
-    /* Prevent any animations or transforms that might hide sidebar */
-    .stSidebar,
-    .stSidebar * {{
-        transition: none !important;
-        transform: translateX(0px) !important;
-    }}
     
     /* Enhanced Header */
     .main-header {{
@@ -1097,16 +956,6 @@ def load_custom_css():
         
         .stat-item {{
             margin: 0.5rem 0;
-        }}
-        
-        /* Mobile sidebar adjustments */
-        .stSidebar > div {{
-            width: 100% !important;
-            min-width: 100% !important;
-        }}
-        
-        .stMainBlock {{
-            padding-left: 0 !important;
         }}
     }}
     
@@ -1334,19 +1183,12 @@ def get_translations():
 
 # ========== Main App ==========
 def main():
-    # Apply sidebar fix first
-    force_sidebar_open()
-    
     # Load custom CSS
     load_custom_css()
     
     # Sidebar for settings and filters
     with st.sidebar:
         st.markdown('<div class="sidebar-content">', unsafe_allow_html=True)
-        
-        # Add a note about sidebar
-        st.markdown("### 🔧 Settings Panel")
-        st.info("💡 This sidebar contains all app controls and settings.")
         
         # Language selection
         language = st.selectbox(
@@ -1379,10 +1221,6 @@ def main():
         
         # Search functionality
         search_query = st.text_input("🔍 Search stories...", placeholder="Type keywords...")
-        
-        # Reset button for sidebar state (for testing)
-        if st.button("🔄 Reset Layout"):
-            st.rerun()
         
         st.markdown('</div>', unsafe_allow_html=True)
     
