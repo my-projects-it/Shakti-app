@@ -738,7 +738,8 @@ def load_custom_css():
             "accent": "#fd7e14",
             "background": "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)",
             "card_bg": "rgba(255, 255, 255, 0.95)",
-            "text": "#2c3e50"
+            "text": "#2c3e50",
+            "sidebar_bg": "rgba(255, 236, 210, 0.9)"
         },
         "cool": {
             "primary": "#0d6efd",
@@ -746,7 +747,8 @@ def load_custom_css():
             "accent": "#20c997", 
             "background": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
             "card_bg": "rgba(255, 255, 255, 0.95)",
-            "text": "#2c3e50"
+            "text": "#2c3e50",
+            "sidebar_bg": "rgba(102, 126, 234, 0.1)"
         },
         "nature": {
             "primary": "#198754",
@@ -754,7 +756,8 @@ def load_custom_css():
             "accent": "#ffc107",
             "background": "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
             "card_bg": "rgba(255, 255, 255, 0.95)", 
-            "text": "#2c3e50"
+            "text": "#2c3e50",
+            "sidebar_bg": "rgba(168, 237, 234, 0.2)"
         }
     }
     
@@ -776,6 +779,35 @@ def load_custom_css():
     #MainMenu {{visibility: hidden;}}
     footer {{visibility: hidden;}}
     header {{visibility: hidden;}}
+    
+    /* Fix Sidebar Styling */
+    .css-1d391kg, .css-1v3fvcr {{
+        background: {current_theme["sidebar_bg"]} !important;
+        backdrop-filter: blur(10px);
+    }}
+    
+    /* Sidebar content styling */
+    .stSidebar .stSelectbox > label,
+    .stSidebar .stRadio > label,
+    .stSidebar .stTextInput > label,
+    .stSidebar h1, .stSidebar h2, .stSidebar h3,
+    .stSidebar p, .stSidebar div {{
+        color: {current_theme["text"]} !important;
+    }}
+    
+    /* Fix white button issue - Hide streamlit's default buttons */
+    .stSidebar .stButton button {{
+        display: none !important;
+    }}
+    
+    /* Style sidebar elements properly */
+    .stSidebar .stSelectbox > div > div,
+    .stSidebar .stRadio > div,
+    .stSidebar .stTextInput > div > div {{
+        background: {current_theme["card_bg"]} !important;
+        border-radius: 8px !important;
+        border: 1px solid {current_theme["secondary"]} !important;
+    }}
     
     /* Enhanced Header */
     .main-header {{
@@ -845,21 +877,21 @@ def load_custom_css():
     
     /* Enhanced Buttons */
     .stButton > button {{
-        background: linear-gradient(45deg, {current_theme["primary"]}, {current_theme["accent"]});
+        background: linear-gradient(45deg, {current_theme["primary"]}, {current_theme["accent"]}) !important;
         color: white !important;
-        border: none;
-        padding: 0.75rem 2rem;
-        border-radius: 50px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-        font-family: 'Inter', sans-serif;
+        border: none !important;
+        padding: 0.75rem 2rem !important;
+        border-radius: 50px !important;
+        font-weight: 600 !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2) !important;
+        font-family: 'Inter', sans-serif !important;
     }}
     
     .stButton > button:hover {{
-        transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-        filter: brightness(1.1);
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important;
+        filter: brightness(1.1) !important;
     }}
     
     /* Stats Styling */
@@ -938,6 +970,20 @@ def load_custom_css():
         box-shadow: 0 4px 16px rgba(0,0,0,0.1);
     }}
     
+    /* Fix expander styling */
+    .streamlit-expanderHeader {{
+        background: {current_theme["card_bg"]} !important;
+        border-radius: 10px !important;
+        border: 1px solid {current_theme["secondary"]} !important;
+    }}
+    
+    .streamlit-expanderContent {{
+        background: {current_theme["card_bg"]} !important;
+        border-radius: 0 0 10px 10px !important;
+        border: 1px solid {current_theme["secondary"]} !important;
+        border-top: none !important;
+    }}
+    
     /* Mobile Responsive */
     @media (max-width: 768px) {{
         .main-title {{
@@ -963,17 +1009,26 @@ def load_custom_css():
     .stTextArea textarea, .stTextInput input {{
         border-radius: 12px !important;
         border: 2px solid {current_theme["secondary"]} !important;
-        font-family: 'Inter', sans-serif;
+        font-family: 'Inter', sans-serif !important;
+        background: {current_theme["card_bg"]} !important;
     }}
     
     .stSelectbox > div > div {{
         border-radius: 12px !important;
         border: 2px solid {current_theme["secondary"]} !important;
+        background: {current_theme["card_bg"]} !important;
     }}
     
     /* Progress indicators */
     .stProgress > div > div > div {{
         background: linear-gradient(90deg, {current_theme["primary"]}, {current_theme["accent"]});
+    }}
+    
+    /* Fix file uploader */
+    .stFileUploader > div {{
+        background: {current_theme["card_bg"]} !important;
+        border: 2px dashed {current_theme["secondary"]} !important;
+        border-radius: 12px !important;
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -1031,25 +1086,33 @@ if not st.session_state.stories:
 # ========== Audio Functions ==========
 def convert_to_wav(uploaded_file):
     """Audio conversion with progress indication"""
-    audio_format = uploaded_file.type.split("/")[-1]
-    temp_input = tempfile.NamedTemporaryFile(delete=False, suffix="." + audio_format)
-    temp_input.write(uploaded_file.read())
-    temp_input.flush()
+    try:
+        audio_format = uploaded_file.type.split("/")[-1]
+        temp_input = tempfile.NamedTemporaryFile(delete=False, suffix="." + audio_format)
+        temp_input.write(uploaded_file.read())
+        temp_input.flush()
 
-    audio = AudioSegment.from_file(temp_input.name)
-    temp_wav = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
-    audio.export(temp_wav.name, format="wav")
-    
-    # Return both path and duration
-    duration = len(audio) / 1000  # Duration in seconds
-    return temp_wav.name, duration
+        audio = AudioSegment.from_file(temp_input.name)
+        temp_wav = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+        audio.export(temp_wav.name, format="wav")
+        
+        # Return both path and duration
+        duration = len(audio) / 1000  # Duration in seconds
+        return temp_wav.name, duration
+    except Exception as e:
+        st.error(f"Error converting audio: {str(e)}")
+        return None, None
 
 def transcribe_audio(audio_path):
     """Audio transcription with language detection"""
-    recognizer = sr.Recognizer()
-    with sr.AudioFile(audio_path) as source:
-        audio_data = recognizer.record(source)
-        return recognizer.recognize_google(audio_data, language="hi-IN")
+    try:
+        recognizer = sr.Recognizer()
+        with sr.AudioFile(audio_path) as source:
+            audio_data = recognizer.record(source)
+            return recognizer.recognize_google(audio_data, language="hi-IN")
+    except Exception as e:
+        st.error(f"Error transcribing audio: {str(e)}")
+        return ""
 
 # ========== Complete Language System ==========
 def get_translations():
@@ -1183,19 +1246,20 @@ def get_translations():
 
 # ========== Main App ==========
 def main():
-    # Load custom CSS
+    # Load custom CSS first
     load_custom_css()
     
     # Sidebar for settings and filters
     with st.sidebar:
-        st.markdown('<div class="sidebar-content">', unsafe_allow_html=True)
-        
         # Language selection
         language = st.selectbox(
             "🌍 Language / भाषा / மொழி / ভাষা", 
             ["English", "Hindi", "Tamil", "Bengali"],
-            help="Choose your preferred language"
+            help="Choose your preferred language",
+            key="language_select"
         )
+        
+        st.markdown("---")
         
         # Theme selection
         st.markdown("### 🎨 Theme")
@@ -1203,26 +1267,33 @@ def main():
             "Choose theme:",
             ["warm", "cool", "nature"],
             format_func=lambda x: {"warm": "🌸 Warm", "cool": "🌊 Cool", "nature": "🌿 Nature"}[x],
-            horizontal=True
+            horizontal=True,
+            key="theme_radio"
         )
         
+        # Apply theme change immediately
         if theme_option != st.session_state.user_theme:
             st.session_state.user_theme = theme_option
             st.rerun()
+        
+        st.markdown("---")
         
         # View filters
         st.markdown("### 📊 Filters")
         view_mode = st.selectbox(
             "View stories:",
             ["all", "recent", "popular"],
-            format_func=lambda x: {"all": "All Stories", "recent": "Recent", "popular": "Most Supported"}[x]
+            format_func=lambda x: {"all": "All Stories", "recent": "Recent", "popular": "Most Supported"}[x],
+            key="view_select"
         )
         st.session_state.view_mode = view_mode
         
         # Search functionality
-        search_query = st.text_input("🔍 Search stories...", placeholder="Type keywords...")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
+        search_query = st.text_input(
+            "🔍 Search stories...", 
+            placeholder="Type keywords...",
+            key="search_input"
+        )
     
     # Get translations
     translations = get_translations()
@@ -1268,7 +1339,8 @@ def main():
             uploaded_audio = st.file_uploader(
                 "Choose audio file", 
                 type=["mp3", "wav", "m4a", "ogg"],
-                help="Upload your voice recording in MP3, WAV, M4A, or OGG format"
+                help="Upload your voice recording in MP3, WAV, M4A, or OGG format",
+                key="audio_uploader"
             )
             
             story = ""
@@ -1283,24 +1355,31 @@ def main():
                 
                 try:
                     wav_path, audio_duration = convert_to_wav(uploaded_audio)
-                    progress_bar.progress(50)
-                    
-                    status_text.text("🎤 Transcribing speech...")
-                    text = transcribe_audio(wav_path)
-                    progress_bar.progress(100)
-                    
-                    status_text.success("✅ Audio processed successfully!")
-                    
-                    story = st.text_area(
-                        T["transcribed"], 
-                        value=text, 
-                        height=150,
-                        help="You can edit the transcribed text before sharing"
-                    )
-                    
-                    # Show audio info
-                    if audio_duration:
-                        st.info(f"🎵 Audio duration: {audio_duration:.1f} seconds")
+                    if wav_path:
+                        progress_bar.progress(50)
+                        
+                        status_text.text("🎤 Transcribing speech...")
+                        text = transcribe_audio(wav_path)
+                        progress_bar.progress(100)
+                        
+                        if text:
+                            status_text.success("✅ Audio processed successfully!")
+                            
+                            story = st.text_area(
+                                T["transcribed"], 
+                                value=text, 
+                                height=150,
+                                help="You can edit the transcribed text before sharing",
+                                key="transcribed_text"
+                            )
+                            
+                            # Show audio info
+                            if audio_duration:
+                                st.info(f"🎵 Audio duration: {audio_duration:.1f} seconds")
+                        else:
+                            status_text.error("Failed to transcribe audio. Please try again.")
+                    else:
+                        status_text.error("Failed to process audio file.")
                         
                 except Exception as e:
                     st.error(f"⚠️ Error processing audio: {str(e)}")
@@ -1313,7 +1392,8 @@ def main():
                 value="", 
                 height=200,
                 placeholder="Your story matters. Share your experience, strength, and hope...",
-                help="Write your story in your own words. Every voice matters."
+                help="Write your story in your own words. Every voice matters.",
+                key="story_text_input"
             )
             
             if not story and story_text:
@@ -1327,11 +1407,12 @@ def main():
             tags_input = st.text_input(
                 "Tags", 
                 placeholder=T["enter_tags"],
-                help="Add relevant tags to help others find your story"
+                help="Add relevant tags to help others find your story",
+                key="tags_input"
             )
         
         with col_tags2:
-            if st.button("💡 Suggest Tags", help="Get tag suggestions"):
+            if st.button("💡 Suggest Tags", help="Get tag suggestions", key="suggest_tags"):
                 suggested_tags = ["strength", "healing", "hope", "survivor", "journey", "empowerment"]
                 st.info("💡 Suggested: " + ", ".join(suggested_tags))
         
@@ -1340,7 +1421,7 @@ def main():
         # Enhanced Submit Button
         col_submit1, col_submit2, col_submit3 = st.columns([1, 2, 1])
         with col_submit2:
-            if st.button(f"🌟 {T['submit']}", use_container_width=True):
+            if st.button(f"🌟 {T['submit']}", use_container_width=True, key="submit_story"):
                 if story.strip():
                     story_id = save_story(story, tags, audio_duration)
                     
@@ -1448,13 +1529,13 @@ def main():
                     story_id = story_obj['id']
                     current_likes = st.session_state.likes.get(story_id, 0)
                     
-                    if st.button(f"❤️ {current_likes}", key=f"like_{story_id}"):
+                    if st.button(f"❤️ {current_likes}", key=f"like_{story_id}_{idx}"):
                         st.session_state.likes[story_id] = current_likes + 1
                         st.rerun()
                 
                 with col_story3:
                     # Share button (placeholder)
-                    if st.button("🔗 Share", key=f"share_{story_id}"):
+                    if st.button("🔗 Share", key=f"share_{story_id}_{idx}"):
                         st.info("Feature coming soon!")
                 
                 # Story content
@@ -1478,10 +1559,10 @@ def main():
                 st.markdown("---")
                 
                 # Comment form
-                with st.form(key=f"comment_form_{story_obj['id']}"):
+                with st.form(key=f"comment_form_{story_obj['id']}_{idx}"):
                     comment_input = st.text_area(
                         f"💬 {T['comment_placeholder']}",
-                        key=f"input_{story_obj['id']}",
+                        key=f"comment_input_{story_obj['id']}_{idx}",
                         height=80,
                         placeholder="Your words of support and encouragement..."
                     )
