@@ -700,6 +700,7 @@ from pydub import AudioSegment
 import tempfile
 import uuid
 import time
+from collections import Counter
 
 # ========== Enhanced Session State ==========
 if "stories" not in st.session_state:
@@ -725,9 +726,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ========== Enhanced CSS Styling ==========
+# ========== Enhanced CSS Styling (Pure CSS Only) ==========
 def load_custom_css():
-    """Load enhanced custom CSS for better UI"""
+    """Load enhanced custom CSS for better UI - Pure CSS only"""
     
     # Theme configurations
     themes = {
@@ -761,16 +762,25 @@ def load_custom_css():
     
     st.markdown(f"""
     <style>
+    /* Import Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
     /* Global Styles */
     .stApp {{
         background: {current_theme["background"]};
         color: {current_theme["text"]};
+        font-family: 'Inter', sans-serif;
     }}
+    
+    /* Hide Streamlit branding */
+    #MainMenu {{visibility: hidden;}}
+    footer {{visibility: hidden;}}
+    header {{visibility: hidden;}}
     
     /* Enhanced Header */
     .main-header {{
         text-align: center;
-        padding: 2rem 0;
+        padding: 2rem 1rem;
         background: {current_theme["card_bg"]};
         border-radius: 20px;
         margin-bottom: 2rem;
@@ -780,7 +790,7 @@ def load_custom_css():
     }}
     
     .main-title {{
-        font-size: 3.5rem;
+        font-size: 3rem;
         font-weight: 700;
         background: linear-gradient(45deg, {current_theme["primary"]}, {current_theme["accent"]});
         -webkit-background-clip: text;
@@ -790,10 +800,18 @@ def load_custom_css():
     }}
     
     .main-subtitle {{
-        font-size: 1.3rem;
+        font-size: 1.2rem;
         color: {current_theme["text"]};
         font-weight: 300;
         opacity: 0.8;
+        margin-bottom: 0.5rem;
+    }}
+    
+    .main-tagline {{
+        font-size: 1rem;
+        font-style: italic;
+        opacity: 0.6;
+        margin-top: 0.5rem;
     }}
     
     /* Enhanced Cards */
@@ -811,8 +829,8 @@ def load_custom_css():
     }}
     
     .story-card:hover {{
-        transform: translateY(-5px);
-        box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.15);
     }}
     
     .story-card::before {{
@@ -828,40 +846,64 @@ def load_custom_css():
     /* Enhanced Buttons */
     .stButton > button {{
         background: linear-gradient(45deg, {current_theme["primary"]}, {current_theme["accent"]});
-        color: white;
+        color: white !important;
         border: none;
         padding: 0.75rem 2rem;
         border-radius: 50px;
         font-weight: 600;
         transition: all 0.3s ease;
         box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        font-family: 'Inter', sans-serif;
     }}
     
     .stButton > button:hover {{
         transform: translateY(-2px);
         box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        filter: brightness(1.1);
     }}
     
-    /* Enhanced Form Elements */
-    .stTextArea textarea, .stTextInput input {{
-        border-radius: 12px;
-        border: 2px solid {current_theme["secondary"]};
-        background: rgba(255, 255, 255, 0.9);
-        transition: all 0.3s ease;
-    }}
-    
-    .stTextArea textarea:focus, .stTextInput input:focus {{
-        border-color: {current_theme["primary"]};
-        box-shadow: 0 0 0 3px rgba(214, 51, 132, 0.1);
-    }}
-    
-    /* Enhanced Sidebar */
-    .sidebar-content {{
+    /* Stats Styling */
+    .stats-container {{
+        display: flex;
+        justify-content: space-around;
         background: {current_theme["card_bg"]};
         padding: 1.5rem;
         border-radius: 16px;
         margin: 1rem 0;
         box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        flex-wrap: wrap;
+    }}
+    
+    .stat-item {{
+        text-align: center;
+        margin: 0.5rem;
+        min-width: 120px;
+    }}
+    
+    .stat-number {{
+        font-size: 2rem;
+        font-weight: 700;
+        color: {current_theme["primary"]};
+        display: block;
+    }}
+    
+    .stat-label {{
+        font-size: 0.9rem;
+        color: {current_theme["text"]};
+        opacity: 0.7;
+        margin-top: 0.2rem;
+    }}
+    
+    /* Story Content Styling */
+    .story-content {{
+        background: rgba(255,255,255,0.7);
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin: 1rem 0;
+        border-left: 4px solid {current_theme["primary"]};
+        font-size: 1.1rem;
+        line-height: 1.6;
+        font-family: 'Inter', sans-serif;
     }}
     
     /* Tag Styling */
@@ -877,70 +919,23 @@ def load_custom_css():
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }}
     
-    /* Stats Styling */
-    .stats-container {{
-        display: flex;
-        justify-content: space-around;
+    /* Comment Styling */
+    .comment-box {{
+        background: rgba(32, 201, 151, 0.1);
+        padding: 0.8rem;
+        border-radius: 8px;
+        margin: 0.5rem 0;
+        border-left: 3px solid #20c997;
+        font-family: 'Inter', sans-serif;
+    }}
+    
+    /* Sidebar Styling */
+    .sidebar-content {{
         background: {current_theme["card_bg"]};
         padding: 1.5rem;
         border-radius: 16px;
         margin: 1rem 0;
         box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-    }}
-    
-    .stat-item {{
-        text-align: center;
-    }}
-    
-    .stat-number {{
-        font-size: 2rem;
-        font-weight: 700;
-        color: {current_theme["primary"]};
-    }}
-    
-    .stat-label {{
-        font-size: 0.9rem;
-        color: {current_theme["text"]};
-        opacity: 0.7;
-    }}
-    
-    /* Animation Classes */
-    .fade-in {{
-        animation: fadeIn 0.5s ease-in;
-    }}
-    
-    @keyframes fadeIn {{
-        from {{ opacity: 0; transform: translateY(20px); }}
-        to {{ opacity: 1; transform: translateY(0); }}
-    }}
-    
-    /* Progress Bar */
-    .upload-progress {{
-        background: {current_theme["secondary"]};
-        border-radius: 10px;
-        overflow: hidden;
-        height: 8px;
-        margin: 1rem 0;
-    }}
-    
-    .upload-progress-bar {{
-        background: linear-gradient(90deg, {current_theme["primary"]}, {current_theme["accent"]});
-        height: 100%;
-        transition: width 0.3s ease;
-    }}
-    
-    /* Floating Action Styles */
-    .floating-stats {{
-        position: fixed;
-        top: 100px;
-        right: 20px;
-        background: {current_theme["card_bg"]};
-        padding: 1rem;
-        border-radius: 16px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-        backdrop-filter: blur(10px);
-        z-index: 1000;
-        border: 1px solid rgba(255,255,255,0.2);
     }}
     
     /* Mobile Responsive */
@@ -954,17 +949,36 @@ def load_custom_css():
             margin: 1rem 0;
         }}
         
-        .floating-stats {{
-            position: relative;
-            top: auto;
-            right: auto;
-            margin: 1rem 0;
+        .stats-container {{
+            flex-direction: column;
+            align-items: center;
         }}
+        
+        .stat-item {{
+            margin: 0.5rem 0;
+        }}
+    }}
+    
+    /* Form Enhancements */
+    .stTextArea textarea, .stTextInput input {{
+        border-radius: 12px !important;
+        border: 2px solid {current_theme["secondary"]} !important;
+        font-family: 'Inter', sans-serif;
+    }}
+    
+    .stSelectbox > div > div {{
+        border-radius: 12px !important;
+        border: 2px solid {current_theme["secondary"]} !important;
+    }}
+    
+    /* Progress indicators */
+    .stProgress > div > div > div {{
+        background: linear-gradient(90deg, {current_theme["primary"]}, {current_theme["accent"]});
     }}
     </style>
     """, unsafe_allow_html=True)
 
-# ========== Enhanced CSV File Setup ==========
+# ========== CSV File Setup ==========
 CSV_FILE = "anonymous_stories.csv"
 
 def save_story(text, tags, audio_duration=None):
@@ -1014,9 +1028,9 @@ def load_stories_from_csv():
 if not st.session_state.stories:
     st.session_state.stories = load_stories_from_csv()
 
-# ========== Enhanced Audio Functions ==========
+# ========== Audio Functions ==========
 def convert_to_wav(uploaded_file):
-    """Enhanced audio conversion with progress indication"""
+    """Audio conversion with progress indication"""
     audio_format = uploaded_file.type.split("/")[-1]
     temp_input = tempfile.NamedTemporaryFile(delete=False, suffix="." + audio_format)
     temp_input.write(uploaded_file.read())
@@ -1031,15 +1045,15 @@ def convert_to_wav(uploaded_file):
     return temp_wav.name, duration
 
 def transcribe_audio(audio_path):
-    """Enhanced audio transcription with language detection"""
+    """Audio transcription with language detection"""
     recognizer = sr.Recognizer()
     with sr.AudioFile(audio_path) as source:
         audio_data = recognizer.record(source)
         return recognizer.recognize_google(audio_data, language="hi-IN")
 
-# ========== Enhanced Language System ==========
-def get_enhanced_translations():
-    """Enhanced translations with more UI elements"""
+# ========== Language System ==========
+def get_translations():
+    """Enhanced translations"""
     return {
         "English": {
             "title": "Shakti",
@@ -1155,7 +1169,7 @@ def get_enhanced_translations():
         }
     }
 
-# ========== Enhanced Main App ==========
+# ========== Main App ==========
 def main():
     # Load custom CSS
     load_custom_css()
@@ -1199,15 +1213,15 @@ def main():
         st.markdown('</div>', unsafe_allow_html=True)
     
     # Get translations
-    translations = get_enhanced_translations()
+    translations = get_translations()
     T = translations[language]
     
     # Enhanced Header
     st.markdown(f"""
-    <div class="main-header fade-in">
+    <div class="main-header">
         <h1 class="main-title">🌸 {T['title']}</h1>
         <p class="main-subtitle">{T['subtitle']}</p>
-        <p style="font-style: italic; opacity: 0.6; margin-top: 0.5rem;">{T['tagline']}</p>
+        <p class="main-tagline">{T['tagline']}</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -1217,17 +1231,17 @@ def main():
     total_comments = sum(len(comments) for comments in st.session_state.comments.values())
     
     st.markdown(f"""
-    <div class="stats-container fade-in">
+    <div class="stats-container">
         <div class="stat-item">
-            <div class="stat-number">{total_stories}</div>
+            <span class="stat-number">{total_stories}</span>
             <div class="stat-label">{T['total_stories']}</div>
         </div>
         <div class="stat-item">
-            <div class="stat-number">{total_words:,}</div>
+            <span class="stat-number">{total_words:,}</span>
             <div class="stat-label">{T['total_words']}</div>
         </div>
         <div class="stat-item">
-            <div class="stat-number">{total_comments}</div>
+            <span class="stat-number">{total_comments}</span>
             <div class="stat-label">{T['community_support']}</div>
         </div>
     </div>
@@ -1350,7 +1364,6 @@ def main():
                 all_tags.extend(story.get('tags', []))
             
             if all_tags:
-                from collections import Counter
                 tag_counts = Counter(all_tags)
                 st.markdown("**🏷️ Popular Tags:**")
                 for tag, count in tag_counts.most_common(5):
@@ -1365,6 +1378,8 @@ def main():
             for story in recent_stories:
                 preview = story['text'][:50] + "..." if len(story['text']) > 50 else story['text']
                 st.markdown(f"• {preview}")
+        else:
+            st.info("No stories yet. Be the first to share!")
     
     st.markdown("---")
     
@@ -1393,14 +1408,17 @@ def main():
                                 reverse=True)
     
     if not filtered_stories:
-        st.info(f"🌟 {T['no_stories']}")
+        st.markdown(f"""
+        <div class="story-card">
+            <h3>🌟 {T['no_stories']}</h3>
+            <p>Your voice matters. Share your story to inspire and connect with others.</p>
+        </div>
+        """, unsafe_allow_html=True)
     else:
         # Display stories with enhanced UI
         for idx, story_obj in enumerate(filtered_stories):
             with st.container():
-                st.markdown(f"""
-                <div class="story-card fade-in">
-                """, unsafe_allow_html=True)
+                st.markdown('<div class="story-card">', unsafe_allow_html=True)
                 
                 # Story header with metadata
                 col_story1, col_story2, col_story3 = st.columns([3, 1, 1])
@@ -1425,28 +1443,20 @@ def main():
                 with col_story3:
                     # Share button (placeholder)
                     if st.button("🔗 Share", key=f"share_{story_id}"):
-                        st.info("Link copied to clipboard! (Feature coming soon)")
+                        st.info("Feature coming soon!")
                 
                 # Story content
                 st.markdown(f"""
-                <div style="
-                    background: rgba(255,255,255,0.7);
-                    padding: 1.5rem;
-                    border-radius: 12px;
-                    margin: 1rem 0;
-                    border-left: 4px solid #d63384;
-                    font-size: 1.1rem;
-                    line-height: 1.6;
-                ">
+                <div class="story-content">
                     {story_obj['text']}
                 </div>
                 """, unsafe_allow_html=True)
                 
                 # Tags display
                 if story_obj.get("tags"):
-                    st.markdown("**Tags:** " + " ".join([f'<span class="story-tag">#{tag}</span>' 
-                                                       for tag in story_obj["tags"]]), 
-                              unsafe_allow_html=True)
+                    tags_html = " ".join([f'<span class="story-tag">#{tag}</span>' 
+                                        for tag in story_obj["tags"]])
+                    st.markdown(f"**Tags:** {tags_html}", unsafe_allow_html=True)
                 
                 # Audio info if available
                 if story_obj.get('audio_duration', 0) > 0:
@@ -1486,27 +1496,23 @@ def main():
                 comments = st.session_state.comments.get(story_obj['id'], [])
                 if comments:
                     st.markdown("**🧵 Community Support:**")
-                    for idx, comment in enumerate(comments[-5:]):  # Show last 5 comments
+                    for comment in comments[-5:]:  # Show last 5 comments
                         comment_text = comment if isinstance(comment, str) else comment.get('text', comment)
                         comment_time = comment.get('timestamp', '') if isinstance(comment, dict) else ''
                         
+                        time_display = f'<br><small style="opacity: 0.6;">🕒 {comment_time}</small>' if comment_time else ''
+                        
                         st.markdown(f"""
-                        <div style="
-                            background: rgba(32, 201, 151, 0.1);
-                            padding: 0.8rem;
-                            border-radius: 8px;
-                            margin: 0.5rem 0;
-                            border-left: 3px solid #20c997;
-                        ">
+                        <div class="comment-box">
                             💬 {comment_text}
-                            {f'<br><small style="opacity: 0.6;">🕒 {comment_time}</small>' if comment_time else ''}
+                            {time_display}
                         </div>
                         """, unsafe_allow_html=True)
                     
                     if len(comments) > 5:
                         st.caption(f"... and {len(comments) - 5} more comments")
                 
-                st.markdown("</div>", unsafe_allow_html=True)
+                st.markdown('</div>', unsafe_allow_html=True)
                 st.markdown("<br>", unsafe_allow_html=True)
     
     # Enhanced Footer
