@@ -4,19 +4,27 @@ import os
 from datetime import datetime
 import speech_recognition as sr
 from pydub import AudioSegment
+from pydub.exceptions import CouldntDecodeError
 import tempfile
 import uuid
 
+# Initialize session state variables
 if "stories" not in st.session_state:
     st.session_state.stories = []
-
 if "comments" not in st.session_state:
     st.session_state.comments = {}
-
-# ========== Theme Toggle ==========
+if "story_input" not in st.session_state:
+    st.session_state.story_input = ""
+if "tags_input" not in st.session_state:
+    st.session_state.tags_input = ""
 if "theme" not in st.session_state:
-    st.session_state.theme = "dark"  # Default to dark mode
+    st.session_state.theme = "dark"
+if "comment_inputs" not in st.session_state:
+    st.session_state.comment_inputs = {}
+if "audio_processed" not in st.session_state:
+    st.session_state.audio_processed = False
 
+# ========== Theme Setup ==========
 def set_theme(theme):
     if theme == "dark":
         st.markdown("""
@@ -24,9 +32,6 @@ def set_theme(theme):
             .stApp {
                 background-color: #0E1117;
                 color: white;
-            }
-            .css-1d391kg, .css-1y4p8pa, .css-1lcbm17, .css-1outpf7 {
-                background-color: #0E1117 !important;
             }
             .stTextArea>div>div>textarea, .stTextInput>div>div>input {
                 background-color: #262730;
@@ -43,9 +48,6 @@ def set_theme(theme):
             .stApp {
                 background-color: #000000;
                 color: white;
-            }
-            .css-1d391kg, .css-1y4p8pa, .css-1lcbm17, .css-1outpf7 {
-                background-color: #000000 !important;
             }
             .stTextArea>div>div>textarea, .stTextInput>div>div>input {
                 background-color: #1A1A1A;
@@ -76,7 +78,6 @@ with theme_col2:
     st.session_state.theme = theme.lower()
     set_theme(st.session_state.theme)
 
-# [REST OF THE ORIGINAL CODE REMAINS EXACTLY THE SAME...]
 # ========== CSV File Setup ==========
 CSV_FILE = "anonymous_stories.csv"
 
@@ -84,54 +85,82 @@ def save_story(text, tags):
     entry = {
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "story": text.strip(),
-        "tags": ",".join(tags)  # Save tags as comma-separated string
+        "tags": ",".join(tags)
     }
-    if os.path.exists(CSV_FILE):
-        df = pd.read_csv(CSV_FILE)
-        df = pd.concat([df, pd.DataFrame([entry])], ignore_index=True)
-    else:
-        df = pd.DataFrame([entry])
-    df.to_csv(CSV_FILE, index=False)
+    try:
+        if os.path.exists(CSV_FILE):
+            df = pd.read_csv(CSV_FILE)
+            df = pd.concat([df, pd.DataFrame([entry])], ignore_index=True)
+        else:
+            df = pd.DataFrame([entry])
+        df.to_csv(CSV_FILE, index=False)
+    except Exception as e:
+        st.error(f"Failed to save story: {e}")
 
 def load_stories_from_csv():
     if os.path.exists(CSV_FILE):
-        df = pd.read_csv(CSV_FILE)
-        # Convert DataFrame rows into list of story dicts with tags as list
-        stories = []
-        for _, row in df.iterrows():
-            tags = []
-            if "tags" in row and pd.notna(row["tags"]):
-                tags = [tag.strip() for tag in row["tags"].split(",") if tag.strip()]
-            stories.append({
-                "id": str(uuid.uuid4()),  # unique id for session usage
-                "text": row["story"],
-                "tags": tags
-            })
-        return stories
+        try:
+            df = pd.read_csv(CSV_FILE)
+            stories = []
+            for _, row in df.iterrows():
+                tags = []
+                if "tags" in row and pd.notna(row["tags"]):
+                    tags = [tag.strip() for tag in row["tags"].split(",") if tag.strip()]
+                stories.append({
+                    "id": str(uuid.uuid4()),
+                    "text": row["story"],
+                    "tags": tags
+                })
+            return stories
+        except Exception as e:
+            st.error(f"Failed to load stories: {e}")
+            return []
     return []
 
-# Load stories from CSV into session state on app start
 if not st.session_state.stories:
     st.session_state.stories = load_stories_from_csv()
 
-# ========== Audio Conversion ==========
-def convert_to_wav(uploaded_file):
-    audio_format = uploaded_file.type.split("/")[-1]
-    temp_input = tempfile.NamedTemporaryFile(delete=False, suffix="." + audio_format)
-    temp_input.write(uploaded_file.read())
-    temp_input.flush()
+# ========== Audio Handling ==========
+def handle_audio_file(uploaded_file):
+    try:
+        # Create temp file with correct extension
+        audio_format = uploaded_file.type.split("/")[-1]
+        with tempfile.NamedTemporaryFile(delete=False, suffix=f".{audio_format}") as tmp:
+            tmp.write(uploaded_file.getvalue())
+            tmp_path = tmp.name
+        
+        # Convert to WAV if needed
+        if audio_format != "wav":
+            audio = AudioSegment.from_file(tmp_path)
+            wav_path = tmp_path + ".wav"
+            audio.export(wav_path, format="wav")
+            os.remove(tmp_path)
+            return wav_path
+        return tmp_path
+        
+    except CouldntDecodeError:
+        st.error("❌ Unsupported audio format. Please upload MP3 or WAV.")
+        return None
+    except Exception as e:
+        st.error(f"❌ Error processing audio: {str(e)}")
+        return None
 
-    audio = AudioSegment.from_file(temp_input.name)
-    temp_wav = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
-    audio.export(temp_wav.name, format="wav")
-    return temp_wav.name
-
-# ========== Audio Transcription ==========
 def transcribe_audio(audio_path):
     recognizer = sr.Recognizer()
-    with sr.AudioFile(audio_path) as source:
-        audio_data = recognizer.record(source)
-        return recognizer.recognize_google(audio_data, language="hi-IN")
+    try:
+        with sr.AudioFile(audio_path) as source:
+            audio_data = recognizer.record(source)
+            text = recognizer.recognize_google(audio_data, language="hi-IN")
+            return text
+    except sr.UnknownValueError:
+        st.error("🔇 Could not understand audio - poor quality or wrong language")
+        return None
+    except sr.RequestError:
+        st.error("🌐 Network error - please check your connection")
+        return None
+    finally:
+        if os.path.exists(audio_path):
+            os.remove(audio_path)
 
 # ========== Language Selection ==========
 language = st.selectbox("🌐 Choose Language / भाषा चुनें", ["English", "Hindi", "Tamil", "Bengali"])
@@ -140,7 +169,7 @@ translations = {
     "English": {
         "title": "Shakti",
         "subtitle": "Your story is still alive",
-        "upload_audio": "Upload your voice (MP3, WAV, M4A)",
+        "upload_audio": "Upload your voice (MP3, WAV)",
         "write_story": "Write your story",
         "submit": "Submit",
         "success": "Your story has been saved. Thank you!",
@@ -157,7 +186,7 @@ translations = {
     "Hindi": {
         "title": "Shakti",
         "subtitle": "हर आवाज़ अब साँस ले रही है",
-        "upload_audio": "अपनी आवाज़ अपलोड करें (MP3, WAV, M4A)",
+        "upload_audio": "अपनी आवाज़ अपलोड करें (MP3, WAV)",
         "write_story": "अपनी कहानी लिखें",
         "submit": "सबमिट करें",
         "success": "आपकी कहानी सेव हो गई है। धन्यवाद!",
@@ -174,7 +203,7 @@ translations = {
     "Tamil": {
         "title": "என் கதை உயிருடன் உள்ளது",
         "subtitle": "உங்கள் கதை இன்னும் உயிருடன் உள்ளது",
-        "upload_audio": "உங்கள் குரலை பதிவேற்றவும் (MP3, WAV, M4A)",
+        "upload_audio": "உங்கள் குரலை பதிவேற்றவும் (MP3, WAV)",
         "write_story": "உங்கள் கதையை எழுதுங்கள்",
         "submit": "சமர்ப்பிக்கவும்",
         "success": "உங்கள் கதை சேமிக்கப்பட்டது. நன்றி!",
@@ -191,7 +220,7 @@ translations = {
     "Bengali": {
         "title": "আমার গল্প এখনও বেঁচে আছে",
         "subtitle": "আপনার কণ্ঠ এখনো জীবিত",
-        "upload_audio": "আপনার কণ্ঠ আপলোড করুন (MP3, WAV, M4A)",
+        "upload_audio": "আপনার কণ্ঠ আপলোড করুন (MP3, WAV)",
         "write_story": "আপনার গল্প লিখুন",
         "submit": "জমা দিন",
         "success": "আপনার গল্প সংরক্ষিত হয়েছে। ধন্যবাদ!",
@@ -207,9 +236,45 @@ translations = {
     }
 }
 
-T = translations[language]
+T = translations.get(language, translations["English"])
 
-# ========== Header ==========
+# ========== Submission Handler ==========
+def handle_submission():
+    tags = [tag.strip().lower() for tag in st.session_state.tags_input.split(",") if tag.strip()]
+
+    if st.session_state.story_input.strip():
+        save_story(st.session_state.story_input, tags)
+
+        story_id = str(uuid.uuid4())
+        st.session_state.stories.append({
+            "id": story_id, 
+            "text": st.session_state.story_input.strip(), 
+            "tags": tags
+        })
+        st.session_state.comments[story_id] = []
+        
+        # Clear inputs
+        st.session_state.story_input = ""
+        st.session_state.tags_input = ""
+        st.session_state.audio_processed = False  # Reset audio processing flag
+        st.session_state.submission_success = True  # Flag for successful submission
+    else:
+        st.session_state.submission_error = True  # Flag for error
+
+def handle_comment(story_id):
+    comment_key = f"comment_input_{story_id}"
+    if comment_key in st.session_state:
+        comment = st.session_state[comment_key]
+        if comment.strip():
+            if story_id not in st.session_state.comments:
+                st.session_state.comments[story_id] = []
+            st.session_state.comments[story_id].append(comment.strip())
+            st.session_state[comment_key] = ""  # Clear the comment input
+            st.session_state.comment_posted = story_id  # Flag which comment was posted
+        else:
+            st.session_state.comment_empty = story_id  # Flag which comment was empty
+
+# ========== UI Components ==========
 st.markdown(f"""
     <div style='text-align: center; padding: 10px;'>
         <h1 style='color:white;'>📖 {T['title']}</h1>
@@ -218,54 +283,60 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 st.markdown("---")
 
-# ========== Audio Upload ==========
-st.subheader("🎙️ " + T['upload_audio'])
-uploaded_audio = st.file_uploader(label="", type=["mp3", "wav", "m4a", "ogg"])
+# Audio Upload Section - Only process if new audio is uploaded
+uploaded_audio = None
+if not st.session_state.audio_processed:
+    st.subheader("🎙️ " + T['upload_audio'])
+    uploaded_audio = st.file_uploader(
+        label=T['upload_audio'], 
+        type=["mp3", "wav"],
+        key="audio_uploader"
+    )
 
-story = ""
+if uploaded_audio and not st.session_state.audio_processed:
+    with st.spinner("🔊 Processing audio..."):
+        audio_path = handle_audio_file(uploaded_audio)
+        if audio_path:
+            text = transcribe_audio(audio_path)
+            if text:
+                st.session_state.story_input = text
+                st.session_state.audio_processed = True  # Mark audio as processed
+                st.success("✅ Transcription complete!")
 
-if uploaded_audio:
-    st.info("⏳ Transcribing audio...")
-    try:
-        wav_path = convert_to_wav(uploaded_audio)
-        text = transcribe_audio(wav_path)
-        st.success("✅ Transcription successful!")
-        story = st.text_area(T["transcribed"], value=text, height=200)
-    except Exception as e:
-        st.error(f"⚠️ Error: {e}")
-        story = ""
+# Story Input Section
+story_label = T['transcribed'] if st.session_state.story_input else T['write_story']
+st.subheader("✍️ " + story_label)
+st.text_area(
+    label="", 
+    height=300, 
+    key="story_input",
+    value=st.session_state.story_input
+)
 
-# ========== Text Area ==========
-st.subheader("✍️ " + T['write_story'])
-story_text = st.text_area(label="", value="", height=300)
-
-# Live character count
-char_count = len(story_text)
-st.caption(f"Characters: {char_count}")
-
-if not story and story_text:
-    story = story_text
-
-# ========== Tags Input ==========
+# Tags Input
 st.subheader("🏷️ " + T["add_tags"])
-tags_input = st.text_input(T["enter_tags"], value="")
-tags = [tag.strip().lower() for tag in tags_input.split(",") if tag.strip()]
+st.text_input(
+    T["enter_tags"], 
+    key="tags_input",
+    value=st.session_state.tags_input
+)
 
-# ========== Submit Button ==========
-if st.button("📤 " + T['submit']):
-    if story.strip():
-        save_story(story, tags)
+# Submit Button
+if st.button("📤 " + T['submit'], on_click=handle_submission):
+    pass  # The actual handling is done in the callback
 
-        story_id = str(uuid.uuid4())
-        st.session_state.stories.append({"id": story_id, "text": story.strip(), "tags": tags})
-        st.session_state.comments[story_id] = []
+# Show submission messages if they exist
+if hasattr(st.session_state, 'submission_success') and st.session_state.submission_success:
+    st.success("✅ " + T['success'])
+    del st.session_state.submission_success  # Clear the flag
 
-        st.success("✅ " + T['success'])
-    else:
-        st.warning("⚠️ " + T['error'])
+if hasattr(st.session_state, 'submission_error') and st.session_state.submission_error:
+    st.warning("⚠️ " + T['error'])
+    del st.session_state.submission_error  # Clear the flag
+
 st.markdown("---")
 
-# ========== Community Stories ==========
+# Community Stories Section
 st.header("📚 Community Stories")
 
 if not st.session_state.stories:
@@ -277,28 +348,42 @@ else:
             tags_display = " ".join([f"`#{tag}`" for tag in story_obj["tags"]])
             st.markdown(f"**Tags:** {tags_display}")
 
-        # Comment form for each story
+        # Comment Section
         with st.form(key=f"comment_form_{story_obj['id']}"):
+            # Create a unique key for each comment input
+            comment_key = f"comment_input_{story_obj['id']}"
+            
+            # Initialize if not exists
+            if comment_key not in st.session_state:
+                st.session_state[comment_key] = ""
+                
             comment_input = st.text_input(
                 "💬 " + T["comment_placeholder"],
-                key=f"input_{story_obj['id']}"
+                key=comment_key,
+                value=st.session_state[comment_key]
             )
-            post = st.form_submit_button(T["post_comment"])
+            
+            # Submit button with callback
+            submitted = st.form_submit_button(
+                T["post_comment"],
+                on_click=handle_comment,
+                args=(story_obj['id'],)
+            )
 
-            if post:
-                if comment_input.strip():
-                    st.session_state.comments.setdefault(story_obj['id'], []).append(
-                        comment_input.strip()
-                    )
-                    st.success("💬 " + T["comment_posted"])
-                else:
-                    st.warning("⚠️ " + T["comment_empty"])
+        # Show comment messages if they exist for this story
+        if hasattr(st.session_state, 'comment_posted') and st.session_state.comment_posted == story_obj['id']:
+            st.success("💬 " + T["comment_posted"])
+            del st.session_state.comment_posted  # Clear the flag
+            
+        if hasattr(st.session_state, 'comment_empty') and st.session_state.comment_empty == story_obj['id']:
+            st.warning("⚠️ " + T["comment_empty"])
+            del st.session_state.comment_empty  # Clear the flag
 
-        # Display existing comments
+        # Display Comments
         comments = st.session_state.comments.get(story_obj['id'], [])
         if comments:
             st.markdown("**🧵 Comments:**")
-            for idx, c in enumerate(comments, 1):
+            for c in comments:
                 st.markdown(f"- {c}")
 
         st.markdown("---")
