@@ -1,4 +1,4 @@
- main
+
 # Contributor Covenant Code of Conduct
 
 ## Our Pledge
@@ -205,5 +205,4 @@ This Code of Conduct is adapted from the [Contributor Covenant (v3.0)](https://w
 
 ---
 
-***Together, let's build Shakti-App as a space where innovation thrives, learning never stops, and every contributor feels empowered to make a difference.
-main
+Together, let's build Shakti-App as a space where innovation thrives, learning never stops, and every contributor feels empowered to make a difference.
